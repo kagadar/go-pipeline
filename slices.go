@@ -1,10 +1,16 @@
 package pipeline
 
+import "golang.org/x/exp/constraints"
+
 func Flatten[O []E, I ~[]O, E any](i I) (o O) {
 	for _, e := range i {
 		o = append(o, e...)
 	}
 	return
+}
+
+func Less[E constraints.Ordered](x, y E) bool {
+	return x < y
 }
 
 func SliceToMap[O map[K]V, I ~[]E, K comparable, V, E any](i I, f func(E) (K, V)) (o O) {
