@@ -1,6 +1,6 @@
 # Go Pipeline
 
-Provides generic pipeline functions for maps and slices.
+Provides generic pipeline functions for channels, maps and slices.
 
 ## Getting Started
 
