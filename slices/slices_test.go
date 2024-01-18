@@ -7,6 +7,24 @@ import (
 	testcmp "github.com/google/go-cmp/cmp"
 )
 
+func TestFilter(t *testing.T) {
+	if diff := testcmp.Diff(
+		Filter([]int{1, 2, 3, 4, 5, 6}, func(e int) bool { return e%3 == 0 }),
+		[]int{3, 6},
+	); diff != "" {
+		t.Errorf("Filter() unexpected diff (-got +want):\n%s", diff)
+	}
+}
+
+func TestFlatten(t *testing.T) {
+	if diff := testcmp.Diff(
+		Flatten([][]int{{1}, {1, 2}, {1, 2, 3}}),
+		[]int{1, 1, 2, 1, 2, 3},
+	); diff != "" {
+		t.Errorf("Flatten() unexpected diff (-got +want):\n%s", diff)
+	}
+}
+
 func TestLast(t *testing.T) {
 	for _, tt := range []struct {
 		name string
@@ -29,15 +47,6 @@ func TestLast(t *testing.T) {
 				t.Errorf("Last() got %d want %d", got, tt.want)
 			}
 		})
-	}
-}
-
-func TestFlatten(t *testing.T) {
-	if diff := testcmp.Diff(
-		Flatten([][]int{{1}, {1, 2}, {1, 2, 3}}),
-		[]int{1, 1, 2, 1, 2, 3},
-	); diff != "" {
-		t.Errorf("Flatten() unexpected diff (-got +want):\n%s", diff)
 	}
 }
 

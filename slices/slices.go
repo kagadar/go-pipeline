@@ -1,9 +1,11 @@
 package slices
 
-// Last returns the last element of the provided slice, or the zero value of that type if the slice is empty.
-func Last[I ~[]E, E any](i I) (e E) {
-	if l := len(i); l > 0 {
-		e = i[l-1]
+// Filter returns a new slice containing all of the elements for which the provided function returned true, in order.
+func Filter[I ~[]E, E any](i I, f func(E) bool) (o I) {
+	for _, e := range i {
+		if f(e) {
+			o = append(o, e)
+		}
 	}
 	return
 }
@@ -12,6 +14,14 @@ func Last[I ~[]E, E any](i I) (e E) {
 func Flatten[O []E, I ~[]O, E any](i I) (o O) {
 	for _, e := range i {
 		o = append(o, e...)
+	}
+	return
+}
+
+// Last returns the last element of the provided slice, or the zero value of that type if the slice is empty.
+func Last[I ~[]E, E any](i I) (e E) {
+	if l := len(i); l > 0 {
+		e = i[l-1]
 	}
 	return
 }

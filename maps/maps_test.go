@@ -30,6 +30,13 @@ func TestValues(t *testing.T) {
 	}
 }
 
+func TestFilter(t *testing.T) {
+	if diff := testcmp.Diff(Filter(map[int]int{1: 1, 2: 3, 4: 4}, func(k, v int) bool { return k == v }),
+		map[int]int{1: 1, 4: 4}); diff != "" {
+		t.Errorf("Filter() unexpected diff (-got +want):\n%s", diff)
+	}
+}
+
 func TestToSlice(t *testing.T) {
 	if diff := testcmp.Diff(
 		ToSlice(map[int]struct{}{1: {}, 2: {}, 3: {}}, func(k int, _ struct{}) int { return k }),

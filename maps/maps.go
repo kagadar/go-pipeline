@@ -15,6 +15,17 @@ func Values[O []V, I ~map[K]V, K comparable, V any](i I) O {
 	return ToSlice(i, func(_ K, v V) V { return v })
 }
 
+// Filter returns a new map containing all of the key-value pairs for which the provided function returned true.
+func Filter[I ~map[K]V, K comparable, V any](i I, f func(K, V) bool) I {
+	o := I{}
+	for k, v := range i {
+		if f(k, v) {
+			o[k] = v
+		}
+	}
+	return o
+}
+
 // ToSlice uses the provided function to transform the key-value pairs of the provided map into a slice.
 func ToSlice[O []E, I ~map[K]V, K comparable, V, E any](i I, f func(K, V) E) (o O) {
 	o = make(O, 0, len(i))
@@ -45,10 +56,10 @@ func Transform[O map[K2]V2, I ~map[K1]V1, K1, K2 comparable, V1, V2 any](i I, f 
 }
 
 // Range runs the provided function once for each key-value pair in the provided map, in order of the provided keys.
-func Range[IM ~map[K]V, IK ~[]K, K comparable, V any](i IM, keys IK, fn func(K, V) error) error {
+func Range[IM ~map[K]V, IK ~[]K, K comparable, V any](i IM, keys IK, f func(K, V) error) error {
 	for _, k := range keys {
 		v := i[k]
-		if err := fn(k, v); err != nil {
+		if err := f(k, v); err != nil {
 			return err
 		}
 	}
@@ -56,15 +67,15 @@ func Range[IM ~map[K]V, IK ~[]K, K comparable, V any](i IM, keys IK, fn func(K, 
 }
 
 // SortedRange runs the provided function once for each key-value pair in the provided map, in ascending order of keys.
-func SortedRange[I ~map[K]V, K cmp.Ordered, V any](i I, fn func(K, V) error) error {
+func SortedRange[I ~map[K]V, K cmp.Ordered, V any](i I, f func(K, V) error) error {
 	s := Keys(i)
 	slices.Sort(s)
-	return Range(i, s, fn)
+	return Range(i, s, f)
 }
 
 // SortedRangeFunc runs the provided range function once for each key-value pair in the provided map, in ascending order of keys as determined by the provided sort function.
-func SortedRangeFunc[I ~map[K]V, K comparable, V any](i I, sortFn func(x, y K) int, rangeFn func(K, V) error) error {
+func SortedRangeFunc[I ~map[K]V, K comparable, V any](i I, sortF func(x, y K) int, rangeF func(K, V) error) error {
 	s := Keys(i)
-	slices.SortFunc(s, sortFn)
-	return Range(i, s, rangeFn)
+	slices.SortFunc(s, sortF)
+	return Range(i, s, rangeF)
 }
