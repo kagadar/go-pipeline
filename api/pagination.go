@@ -1,4 +1,6 @@
-package pipeline
+package api
+
+import "github.com/kagadar/go-pipeline/slices"
 
 // PaginateToken repeatedly calls the provided function, taking a token provided by the previous iteration, until it returns no results.
 // The zero value of the token will be provided to the function on the first iteration.
@@ -26,6 +28,6 @@ func PaginateToken[O ~[]E, E, T any](fn func(T) (O, T, error)) (o O, err error) 
 func Paginate[O ~[]E, E any](fn func(E) (O, error)) (O, error) {
 	return PaginateToken(func(e E) (O, E, error) {
 		s, err := fn(e)
-		return s, Last(s), err
+		return s, slices.Last(s), err
 	})
 }

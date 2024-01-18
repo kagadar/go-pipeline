@@ -1,4 +1,4 @@
-package pipeline
+package api
 
 import (
 	"errors"
@@ -12,7 +12,7 @@ func data(last int, pageSize int) []int {
 	if last >= len(d) {
 		return []int{}
 	}
-	return d[last:Min(last+pageSize, len(d))]
+	return d[last:min(last+pageSize, len(d))]
 }
 
 func TestPaginate(t *testing.T) {

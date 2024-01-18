@@ -1,4 +1,4 @@
-package pipeline
+package slices
 
 import (
 	"strconv"
@@ -41,20 +41,20 @@ func TestFlatten(t *testing.T) {
 	}
 }
 
-func TestSliceToMap(t *testing.T) {
+func TestToMap(t *testing.T) {
 	if diff := testcmp.Diff(
-		SliceToMap([]int{1, 2, 3}, func(e int) (k int, v struct{}) { return e, v }),
+		ToMap([]int{1, 2, 3}, func(e int) (k int, v struct{}) { return e, v }),
 		map[int]struct{}{1: {}, 2: {}, 3: {}},
 	); diff != "" {
-		t.Errorf("SliceToMap() unexpected diff (-got +want):\n%s", diff)
+		t.Errorf("ToMap() unexpected diff (-got +want):\n%s", diff)
 	}
 }
 
-func TestTransformSlice(t *testing.T) {
+func TestTransform(t *testing.T) {
 	if diff := testcmp.Diff(
-		TransformSlice([]int{1, 2, 3}, func(e int) string { return strconv.Itoa(e) }),
+		Transform([]int{1, 2, 3}, func(e int) string { return strconv.Itoa(e) }),
 		[]string{"1", "2", "3"},
 	); diff != "" {
-		t.Errorf("TransformSlice() unexpected diff (-got +want):\n%s", diff)
+		t.Errorf("Transform() unexpected diff (-got +want):\n%s", diff)
 	}
 }

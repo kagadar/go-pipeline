@@ -1,4 +1,4 @@
-package pipeline
+package maps
 
 import (
 	"cmp"
@@ -30,13 +30,13 @@ func TestValues(t *testing.T) {
 	}
 }
 
-func TestMapToSlice(t *testing.T) {
+func TestToSlice(t *testing.T) {
 	if diff := testcmp.Diff(
-		MapToSlice(map[int]struct{}{1: {}, 2: {}, 3: {}}, func(k int, _ struct{}) int { return k }),
+		ToSlice(map[int]struct{}{1: {}, 2: {}, 3: {}}, func(k int, _ struct{}) int { return k }),
 		[]int{1, 2, 3},
 		cmpopts.SortSlices(cmp.Less[int]),
 	); diff != "" {
-		t.Errorf("MapToSlice() unexpected diff (-got +want):\n%s", diff)
+		t.Errorf("ToSlice() unexpected diff (-got +want):\n%s", diff)
 	}
 }
 
@@ -52,21 +52,21 @@ func TestMapMapInsert(t *testing.T) {
 	}
 }
 
-func TestTransformMap(t *testing.T) {
+func TestTransform(t *testing.T) {
 	if diff := testcmp.Diff(
-		TransformMap(
+		Transform(
 			map[int]struct{}{1: {}, 2: {}, 3: {}},
 			func(k int, v struct{}) (string, struct{}) { return strconv.Itoa(k), v },
 		),
 		map[string]struct{}{"1": {}, "2": {}, "3": {}},
 	); diff != "" {
-		t.Errorf("TransformMap() unexpected diff (-got +want):\n%s", diff)
+		t.Errorf("Transform() unexpected diff (-got +want):\n%s", diff)
 	}
 }
 
-func TestRangeKeys(t *testing.T) {
+func TestRange(t *testing.T) {
 	var got []string
-	if err := RangeKeys(
+	if err := Range(
 		map[int]string{1: "a", 2: "b", 3: "c"},
 		[]int{1, 2},
 		func(i int, s string) error {
@@ -74,22 +74,22 @@ func TestRangeKeys(t *testing.T) {
 			return nil
 		},
 	); err != nil {
-		t.Fatalf("RangeKeys() unexpected error: %v", err)
+		t.Fatalf("Range() unexpected error: %v", err)
 	}
 	if diff := testcmp.Diff(got, []string{"a", "b"}); diff != "" {
-		t.Errorf("RangeKeys() unexpected diff (-got +want):\n%s", diff)
+		t.Errorf("Range() unexpected diff (-got +want):\n%s", diff)
 	}
 }
 
-func TestRangeKeys_Err(t *testing.T) {
+func TestRange_Err(t *testing.T) {
 	want := errors.New("test error")
-	if err := RangeKeys(
+	if err := Range(
 		map[int]string{1: "a", 2: "b", 3: "c"},
 		[]int{1, 2}, func(i int, s string) error {
 			return want
 		},
 	); err != want {
-		t.Errorf("RangeKeys() unexpected error: got %v want %v", err, want)
+		t.Errorf("Range() unexpected error: got %v want %v", err, want)
 	}
 }
 
