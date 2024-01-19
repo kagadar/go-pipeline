@@ -100,6 +100,12 @@ func TestRange_Err(t *testing.T) {
 	}
 }
 
+func TestReduce(t *testing.T) {
+	if got, want := Reduce(map[int]struct{}{1: {}, 2: {}, 3: {}}, func(o, k int, v struct{}) int { return o + k }), 6; got != want {
+		t.Errorf("Reduce() got %d want %d", got, want)
+	}
+}
+
 func TestSortedRange(t *testing.T) {
 	var got []string
 	if err := SortedRange(

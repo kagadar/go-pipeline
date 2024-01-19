@@ -66,6 +66,14 @@ func Range[IM ~map[K]V, IK ~[]K, K comparable, V any](i IM, keys IK, f func(K, V
 	return nil
 }
 
+// Reduce runs the provided function once for each key-value pair, accumulating the result in `O`.
+func Reduce[O any, I ~map[K]V, K comparable, V any](i I, f func(O, K, V) O) (o O) {
+	for k, v := range i {
+		o = f(o, k, v)
+	}
+	return
+}
+
 // SortedRange runs the provided function once for each key-value pair in the provided map, in ascending order of keys.
 func SortedRange[I ~map[K]V, K cmp.Ordered, V any](i I, f func(K, V) error) error {
 	s := Keys(i)

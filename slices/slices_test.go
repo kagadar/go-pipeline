@@ -50,6 +50,12 @@ func TestLast(t *testing.T) {
 	}
 }
 
+func TestReduce(t *testing.T) {
+	if got, want := Reduce([]int{1, 2, 3}, func(o string, e int) string { return o + strconv.Itoa(e) }), "123"; got != want {
+		t.Errorf("Reduce() got %s want %s", got, want)
+	}
+}
+
 func TestToMap(t *testing.T) {
 	if diff := testcmp.Diff(
 		ToMap([]int{1, 2, 3}, func(e int) (k int, v struct{}) { return e, v }),
@@ -65,5 +71,11 @@ func TestTransform(t *testing.T) {
 		[]string{"1", "2", "3"},
 	); diff != "" {
 		t.Errorf("Transform() unexpected diff (-got +want):\n%s", diff)
+	}
+}
+
+func TestZip(t *testing.T) {
+	if diff := testcmp.Diff(Zip([]int{1, 2, 3, 4, 5}, []int{5, 6, 7, 8, 9}, []int{9, 8}), [][]int{{1, 5, 9}, {2, 6, 8}}); diff != "" {
+		t.Errorf("Zip() unexpected diff (-got +want):\n%s", diff)
 	}
 }
