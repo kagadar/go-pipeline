@@ -3,6 +3,8 @@ package maps
 import (
 	"cmp"
 	"slices"
+
+	pslices "github.com/kagadar/go-pipeline/slices"
 )
 
 // Keys returns the keys of the provided map as a slice in no particular order.
@@ -86,4 +88,40 @@ func SortedRangeFunc[I ~map[K]V, K comparable, V any](i I, sortF func(x, y K) in
 	s := Keys(i)
 	slices.SortFunc(s, sortF)
 	return Range(i, s, rangeF)
+}
+
+// ValueSortedRange runs the provided range function once for each key-value pair in the provided map, in ascending order of values.
+func ValueSortedRange[I ~map[K]V, K comparable, V cmp.Ordered](i I, f func(K, V) error) error {
+	type pair struct {
+		k K
+		v V
+	}
+	pairs := ToSlice(i, func(k K, v V) pair {
+		return pair{k, v}
+	})
+	slices.SortFunc(pairs, func(x, y pair) int {
+		if x.v < y.v {
+			return -1
+		}
+		if x.v > y.v {
+			return 1
+		}
+		return 0
+	})
+	return Range(i, pslices.Transform(pairs, func(p pair) K { return p.k }), f)
+}
+
+// ValueSortedRange runs the provided range function once for each key-value pair in the provided map, in ascending order of values as determined by the provided sort function.
+func ValueSortedRangeFunc[I ~map[K]V, K comparable, V any](i I, sortF func(x, y V) int, rangeF func(K, V) error) error {
+	type pair struct {
+		k K
+		v V
+	}
+	pairs := ToSlice(i, func(k K, v V) pair {
+		return pair{k, v}
+	})
+	slices.SortFunc(pairs, func(x, y pair) int {
+		return sortF(x.v, y.v)
+	})
+	return Range(i, pslices.Transform(pairs, func(p pair) K { return p.k }), rangeF)
 }

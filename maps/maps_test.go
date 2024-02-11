@@ -144,3 +144,42 @@ func TestSortedRangeFunc(t *testing.T) {
 		t.Errorf("SortedRangeFunc() unexpected diff (-got +want):\n%s", diff)
 	}
 }
+
+func TestValueSortedRange(t *testing.T) {
+	var got []int
+	if err := ValueSortedRange(
+		map[int]string{1: "z", 2: "y", 3: "x"},
+		func(i int, s string) error {
+			got = append(got, i)
+			return nil
+		},
+	); err != nil {
+		t.Fatalf("ValueSortedRange() unexpected error: %v", err)
+	}
+	if diff := testcmp.Diff(got, []int{3, 2, 1}); diff != "" {
+		t.Errorf("ValueSortedRange() unexpected diff (-got +want):\n%s", diff)
+	}
+}
+
+func TestValueSortedRangeFunc(t *testing.T) {
+	type value struct {
+		a string
+		b int
+	}
+	var got []int
+	if err := ValueSortedRangeFunc(
+		map[int]value{1: {"z", 9}, 2: {"y", 8}, 3: {"x", 7}},
+		func(x, y value) int {
+			return x.b - y.b
+		},
+		func(i int, v value) error {
+			got = append(got, i)
+			return nil
+		},
+	); err != nil {
+		t.Fatalf("ValueSortedRangeFunc() unexpected error: %v", err)
+	}
+	if diff := testcmp.Diff(got, []int{3, 2, 1}); diff != "" {
+		t.Errorf("ValueSortedRangeFunc() unexpected diff (-got +want):\n%s", diff)
+	}
+}
