@@ -21,11 +21,6 @@ func PaginateToken[O ~[]E, E, T any](f func(T) (O, T, error)) (o O, err error) {
 	}
 }
 
-// Paginate158 is identical to PaginateToken, but strictly adheres to aip.dev/158.
-// As such, the token _must_ be a string, and the only way to signal that the end of collection has been reached is for the token to be an empty string.
-func Paginate158[O ~[]E, E any](f func(string) (O, string, error)) (o O, err error) {
-}
-
 // Paginate repeatedly calls the provided function, taking the last value returned as an input, until it returns no results.
 // The zero value of the returned type will be provided to the function on the first iteration.
 //
