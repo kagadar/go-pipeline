@@ -2,11 +2,11 @@ package slices
 
 import "slices"
 
-// Dedupe returns a new slice containing the distinct elements of the provided slice, in order of first occurrence. 
+// Dedupe returns a new slice containing the distinct elements of the provided slice, in order of first occurrence.
 func Dedupe[I ~[]E, E comparable](i I) (o I) {
 	m := map[E]struct{}{}
 	for _, e := range i {
-		if _, ok := m[e] {
+		if _, ok := m[e]; !ok {
 			m[e] = struct{}{}
 			o = append(o, e)
 		}
@@ -64,11 +64,11 @@ func Transform[O []E2, I ~[]E1, E1, E2 any](i I, f func(E1) E2) (o O) {
 		o = append(o, f(e))
 	}
 	return
-}
+}
 
 // TransformErr uses the provided function to transform the elements of the provided slice into a new slice.
 // This function will return a nil slice and the first non-nil error returned by the transform function, without transforming the remaining elements.
-func TransformErr[O []E2, I ~[]E1, E1, E2 any](i I, f func(E1) (E2, error) (o O, err error) {
+func TransformErr[O []E2, I ~[]E1, E1, E2 any](i I, f func(E1) (E2, error)) (o O, err error) {
 	for _, ei := range i {
 		eo, err := f(ei)
 		if err != nil {
