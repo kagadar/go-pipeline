@@ -2,6 +2,18 @@ package slices
 
 import "slices"
 
+// Dedupe returns a new slice containing the distinct elements of the provided slice, in order of first occurrence. 
+func Dedupe[I ~[]E, E comparable](i I) (o I) {
+	m := map[E]struct{}{}
+	for _, e := range i {
+		if _, ok := m[e] {
+			m[e] = struct{}{}
+			o = append(o, e)
+		}
+	}
+	return
+}
+
 // Filter returns a new slice containing all of the elements for which the provided function returned true, in order.
 func Filter[I ~[]E, E any](i I, f func(E) bool) (o I) {
 	for _, e := range i {
@@ -47,10 +59,22 @@ func ToMap[O map[K]V, I ~[]E, K comparable, V, E any](i I, f func(E) (K, V)) (o 
 }
 
 // Transform uses the provided function to transform the elements of the provided slice into a new slice.
-// The returned slice does not have a stable order.
 func Transform[O []E2, I ~[]E1, E1, E2 any](i I, f func(E1) E2) (o O) {
 	for _, e := range i {
 		o = append(o, f(e))
+	}
+	return
+}
+
+// TransformErr uses the provided function to transform the elements of the provided slice into a new slice.
+// This function will return a nil slice and the first non-nil error returned by the transform function, without transforming the remaining elements.
+func TransformErr[O []E2, I ~[]E1, E1, E2 any](i I, f func(E1) (E2, error) (o O, err error) {
+	for _, ei := range i {
+		eo, err := f(ei)
+		if err != nil {
+			return nil, err
+		}
+		o = append(o, eo)
 	}
 	return
 }
