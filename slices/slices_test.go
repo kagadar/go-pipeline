@@ -1,11 +1,18 @@
 package slices
 
 import (
+	"fmt"
 	"strconv"
 	"testing"
 
 	testcmp "github.com/google/go-cmp/cmp"
 )
+
+func TestDedupe(t *testing.T) {
+	if diff := testcmp.Diff(Dedupe([]int{3, 2, 1, 1, 3}), []int{3, 2, 1}); diff != "" {
+		t.Errorf("Dedupe() unexpected diff (-got +want):\n%s", diff)
+	}
+}
 
 func TestFilter(t *testing.T) {
 	if diff := testcmp.Diff(
@@ -71,6 +78,26 @@ func TestTransform(t *testing.T) {
 		[]string{"1", "2", "3"},
 	); diff != "" {
 		t.Errorf("Transform() unexpected diff (-got +want):\n%s", diff)
+	}
+}
+
+func TestTransformErr(t *testing.T) {
+	got, err := TransformErr([]int{1, 2, 3}, func(e int) (string, error) { return strconv.Itoa(e), nil })
+	if err != nil {
+		t.Fatalf("TransformErr() unexpected error: %v", err)
+	}
+	if diff := testcmp.Diff(got, []string{"1", "2", "3"}); diff != "" {
+		t.Errorf("TransformErr() unexpected diff (-got +want):\n%s", diff)
+	}
+}
+
+func TestTransformErr_Error(t *testing.T) {
+	_, err := TransformErr([]int{1, 2}, func(e int) (string, error) { return "", fmt.Errorf("%d", e) })
+	if err == nil {
+		t.Fatal("TransformErr() expected error but got nil")
+	}
+	if err.Error() != "1" {
+		t.Fatalf("TransformErr() unexpected error: %v", err)
 	}
 }
 
