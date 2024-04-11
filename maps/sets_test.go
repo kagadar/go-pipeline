@@ -98,3 +98,16 @@ func TestUnion(t *testing.T) {
 		t.Errorf("Union() unexpected diff (-got +want):\n%s", diff)
 	}
 }
+
+func TestUnionLast(t *testing.T) {
+	if diff := testcmp.Diff(
+		UnionLast(
+			map[int]string{1: "a", 2: "b", 3: "c"},
+			map[int]string{2: "i", 3: "j", 4: "k"},
+			map[int]string{3: "x", 4: "y", 5: "z"},
+		),
+		map[int]string{1: "a", 2: "i", 3: "x", 4: "y", 5: "z"},
+	); diff != "" {
+		t.Errorf("UnionLast() unexpected diff (-got +want):\n%s", diff)
+	}
+}

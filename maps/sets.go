@@ -73,3 +73,15 @@ func Union[O map[K][]V, I ~map[K]V, K comparable, V any](i ...I) O {
 	}
 	return o
 }
+
+// UnionLast returns the union of the provided maps.
+// The value will be the value of the last instance of its key in the provided maps.
+func UnionLast[I ~map[K]V, K comparable, V any](i ...I) I {
+	o := I{}
+	for _, m := range i {
+		for k, v := range m {
+			o[k] = v
+		}
+	}
+	return o
+}
