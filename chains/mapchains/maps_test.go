@@ -36,3 +36,16 @@ func TestTransform_ErrKeyCollision(t *testing.T) {
 		t.Errorf("Transform() error = %v, want %v", err, errKeyCollision)
 	}
 }
+
+func TestFilter(t *testing.T) {
+	got, err := Filter(chains.NewMapLink(map[int]int{1: 1, 2: 3, 4: 4}), func(k, v int) bool { return k == v })()
+	if err != nil {
+		t.Fatalf("Filter() unexpected error: %v", err)
+	}
+	if diff := testcmp.Diff(
+		got,
+		map[int]int{1: 1, 4: 4},
+	); diff != "" {
+		t.Errorf("Filter() unexpected diff (-got +want):\n%s", diff)
+	}
+}
