@@ -37,3 +37,22 @@ func Transform[K1, K2 comparable, V1, V2 any](i chains.MapLink[K1, V1], f func(K
 	}
 	return chains.NewMapLink(o)
 }
+
+// Filter returns a new map containing all of the key-value pairs for which the provided function returned true.
+func Filter[K comparable, V any](i chains.MapLink[K, V], f func(K, V) (bool, error)) chains.MapLink[K, V] {
+	in, err := i()
+	if err != nil {
+		return propagateErr[K, V](err)
+	}
+	o := make(map[K]V, len(in))
+	for k, v := range in {
+		keep, err := f(k, v)
+		if err != nil {
+			return propagateErr[K, V](err)
+		}
+		if keep {
+			o[k] = v
+		}
+	}
+	return chains.NewMapLink(o)
+}
