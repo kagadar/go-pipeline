@@ -38,7 +38,10 @@ func TestTransform_ErrKeyCollision(t *testing.T) {
 }
 
 func TestFilter(t *testing.T) {
-	got, err := Filter(chains.NewMapLink(map[int]int{1: 1, 2: 3, 4: 4}), func(k, v int) bool { return k == v })()
+	got, err := Filter(
+		chains.NewMapLink(map[int]int{1: 1, 2: 3, 4: 4}),
+		func(k, v int) (bool, error) { return k == v, nil },
+	)()
 	if err != nil {
 		t.Fatalf("Filter() unexpected error: %v", err)
 	}
