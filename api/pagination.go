@@ -24,7 +24,7 @@ func PaginateToken[O ~[]E, E, T any](nextPage func(T) (O, T, error)) (o O, err e
 // Paginate158 repeatedly calls the provided function, feeding in the token returned by the previous iteration, until the token is empty.
 // The first iteration will be provided with an empty string for the token.
 //
-// The function is intended to support pagination that adheres to https://api.dev/158.
+// The function is intended to support pagination that adheres to https://aip.dev/158.
 func Paginate158[O ~[]E, E any](nextPage func(string) (O, string, error)) (o O, err error) {
 	var token string
 	for {
