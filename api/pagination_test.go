@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"iter"
 	"strconv"
 	"testing"
 
@@ -32,10 +33,10 @@ func TestPaginateToken(t *testing.T) {
 
 func TestPaginateToken_Error(t *testing.T) {
 	want := errors.New("test error")
-	if _, err := PaginateToken(func(i int) ([]int, int, error) {
+	if got, err := PaginateToken(func(i int) ([]int, int, error) {
 		return nil, 0, want
-	}); err != want {
-		t.Errorf("PaginateToken() unexpected error: got %v want %v", err, want)
+	}); got != nil || err != want {
+		t.Errorf("PaginateToken() unexpected error: got %v %v, want <nil> %v", got, err, want)
 	}
 }
 
@@ -66,10 +67,10 @@ func TestPaginate158(t *testing.T) {
 
 func TestPaginate158_Error(t *testing.T) {
 	want := errors.New("test error")
-	if _, err := Paginate158(func(t string) ([]int, string, error) {
+	if got, err := Paginate158(func(t string) ([]int, string, error) {
 		return nil, "", want
-	}); err != want {
-		t.Errorf("Paginate158() unexpected error: got %v want %v", err, want)
+	}); got != nil || err != want {
+		t.Errorf("Paginate158() unexpected error: got %v %v want <nil> %v", got, err, want)
 	}
 }
 
@@ -92,9 +93,21 @@ func TestPaginate(t *testing.T) {
 
 func TestPaginate_Error(t *testing.T) {
 	want := errors.New("test error")
-	if _, err := Paginate(func(i int) ([]int, error) {
+	if got, err := Paginate(func(i int) ([]int, error) {
 		return nil, want
-	}); err != want {
-		t.Errorf("Paginate() unexpected error: got %v want %v", err, want)
+	}); got != nil || err != want {
+		t.Errorf("Paginate() unexpected error: got %v %v want <nil> %v", got, err, want)
 	}
+}
+
+func coverBreak[E any](i iter.Seq[E]) {
+	for range i {
+		break
+	}
+}
+
+func TestYieldCoverage(t *testing.T) {
+	var err error
+	coverBreak(PaginateTokenSeq(func(int) ([]int, int, error) { return []int{1}, 0, nil }, &err))
+	coverBreak(Paginate158Seq(func(string) ([]int, string, error) { return []int{1}, "", nil }, &err))
 }

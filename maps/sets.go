@@ -4,7 +4,7 @@ import (
 	"maps"
 )
 
-// Difference returns the elements of `a` that are not present in `b` as a new map.
+// Difference returns the key-value pairs of `a` whose keys are not present in `b` as a new map.
 func Difference[I ~map[K]V, K comparable, V any](a, b I) I {
 	o := I{}
 	for k, v := range a {
@@ -15,7 +15,7 @@ func Difference[I ~map[K]V, K comparable, V any](a, b I) I {
 	return o
 }
 
-// Disjoint returns the disjoint of `a` and `b` as a new map.
+// Disjoint returns the key-value pairs of `a` and `b` whose keys are not present in the other.
 func Disjoint[I ~map[K]V, K comparable, V any](a, b I) I {
 	o := Difference(a, b)
 	maps.Copy(o, Difference(b, a))
@@ -24,7 +24,7 @@ func Disjoint[I ~map[K]V, K comparable, V any](a, b I) I {
 
 // Intersect returns the intersection of the provided maps.
 // The values will be a slice of the values for that key, in order of the provided maps.
-func Intersect[O map[K][]V, I ~map[K]V, K comparable, V any](i ...I) O {
+func Intersect[I ~map[K]V, K comparable, V any](i ...I) map[K][]V {
 	if len(i) == 0 {
 		return nil
 	}
@@ -36,7 +36,7 @@ func Intersect[O map[K][]V, I ~map[K]V, K comparable, V any](i ...I) O {
 			sl = l
 		}
 	}
-	o := O{}
+	o := map[K][]V{}
 INPUT:
 	for k := range sm {
 		var vs []V
@@ -52,7 +52,7 @@ INPUT:
 	return o
 }
 
-// Subset returns whether `a` is a subset of `b`.
+// Subset returns whether the keys of `a` are a subset of the keys of `b`.
 func Subset[I ~map[K]V, K comparable, V any](a, b I) bool {
 	for k := range a {
 		if _, ok := b[k]; !ok {
@@ -64,8 +64,8 @@ func Subset[I ~map[K]V, K comparable, V any](a, b I) bool {
 
 // Union returns the union of provided maps.
 // The values will be a slice of the values for that key, in order of the provided maps.
-func Union[O map[K][]V, I ~map[K]V, K comparable, V any](i ...I) O {
-	o := O{}
+func Union[I ~map[K]V, K comparable, V any](i ...I) map[K][]V {
+	o := map[K][]V{}
 	for _, m := range i {
 		for k, v := range m {
 			o[k] = append(o[k], v)

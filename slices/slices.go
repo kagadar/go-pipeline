@@ -1,35 +1,42 @@
 package slices
 
-import "slices"
+import (
+	"slices"
+
+	"github.com/kagadar/go-pipeline/must"
+	"github.com/kagadar/go-pipeline/seq"
+)
+
+// All returns whether all elements of the provided slice satisfy the provided function.
+func All[I ~[]E, E any](i I, f func(E) bool) bool {
+	return seq.All(slices.Values(i), f)
+}
 
 // Dedupe returns a new slice containing the distinct elements of the provided slice, in order of first occurrence.
-func Dedupe[I ~[]E, E comparable](i I) (o I) {
-	m := map[E]struct{}{}
-	for _, e := range i {
-		if _, ok := m[e]; !ok {
-			m[e] = struct{}{}
-			o = append(o, e)
-		}
-	}
-	return
+// The returned slice will be preallocated to len(i). To avoid pre-allocation, use [seq.Dedupe].
+func Dedupe[I ~[]E, E comparable](i I) I {
+	return slices.AppendSeq(make(I, 0, len(i)), seq.Dedupe(slices.Values(i)))
 }
 
-// Filter returns a new slice containing all of the elements for which the provided function returned true, in order.
-func Filter[I ~[]E, E any](i I, f func(E) bool) (o I) {
-	for _, e := range i {
-		if f(e) {
-			o = append(o, e)
-		}
-	}
-	return
+// Filter returns a new slice containing all of the elements for which the provided function returned true.
+// The returned slice will be preallocated to len(i). To avoid pre-allocation, use [seq.Filter].
+func Filter[I ~[]E, E any](i I, f func(E) bool) I {
+	return slices.AppendSeq(make(I, 0, len(i)), seq.Filter(slices.Values(i), f))
 }
 
-// Flatten returns a new slice containing all of the elements, in order of the provided slice of slices.
-func Flatten[O []E, I ~[]O, E any](i I) (o O) {
+// Flatten returns a new slice containing all of the elements in order from the provided slice of slices.
+func Flatten[I ~[]S, S ~[]E, E any](i I) S {
+	return slices.Concat(i...)
+}
+
+// GroupBy returns a map of the elements of the provided slice grouped by the value returned by running the key func on them.
+func GroupBy[I ~[]E, K comparable, E any](i I, f func(E) K) map[K][]E {
+	o := map[K][]E{}
 	for _, e := range i {
-		o = append(o, e...)
+		k := f(e)
+		o[k] = append(o[k], e)
 	}
-	return
+	return o
 }
 
 // Last returns the last element of the provided slice, or the zero value of that type if the slice is empty.
@@ -40,50 +47,75 @@ func Last[I ~[]E, E any](i I) (e E) {
 	return
 }
 
-// Reduce runs the provided function once for each element, in order, accumulating the result in `O`.
-func Reduce[O any, I ~[]E, E any](i I, f func(O, E) O) (o O) {
+// Partition returns two new slices of the elements of the provided slice, splitting them based on whether the provided func returned true.
+// To avoid reallocation, the `fail` slice will be in reverse order.
+func Partition[I ~[]E, E any](i I, f func(E) bool) (I, I) {
+	out := make(I, len(i))
+	front, back := 0, len(i)-1
 	for _, e := range i {
-		o = f(o, e)
+		if f(e) {
+			out[front] = e
+			front++
+		} else {
+			out[back] = e
+			back--
+		}
 	}
-	return
+	return out[:front:front], out[front:]
+}
+
+// Reduce runs the provided function for each element of the provided slice, accumulating the result in `O`.
+func Reduce[I ~[]E, E, O any](i I, f func(O, E) O) O {
+	return seq.Reduce(slices.Values(i), f)
+}
+
+// SkipWhile returns a new slice containing the elements of the provided slice, skipping elements from the start until provided function returns true for the first time.
+// The returned slice will be preallocated to len(i). To avoid pre-allocation, use [seq.SkipWhile].
+func SkipWhile[I ~[]E, E any](i I, f func(E) bool) I {
+	return slices.AppendSeq(make(I, 0, len(i)), seq.SkipWhile(slices.Values(i), f))
+}
+
+// TakeWhile returns a new slice containing the elements of the provided slice until the provided function returns false.
+// The returned slice will be preallocated to len(i). To avoid pre-allocation, use [seq.TakeWhile].
+func TakeWhile[I ~[]E, E any](i I, f func(E) bool) I {
+	return slices.AppendSeq(make(I, 0, len(i)), seq.TakeWhile(slices.Values(i), f))
 }
 
 // ToMap uses the provided function to transform the elements of the provided slice into a map.
-func ToMap[O map[K]V, I ~[]E, K comparable, V, E any](i I, f func(E) (K, V)) (o O) {
-	o = O{}
-	for _, e := range i {
-		k, v := f(e)
+// The returned map will be preallocated to len(i). To avoid pre-allocation, use [seq.ToSeq2].
+func ToMap[I ~[]E, K comparable, V, E any](i I, f func(E) (K, V)) map[K]V {
+	o := make(map[K]V, len(i))
+	for k, v := range seq.ToSeq2(slices.Values(i), f) {
 		o[k] = v
 	}
-	return
+	return o
 }
 
 // Transform uses the provided function to transform the elements of the provided slice into a new slice.
-func Transform[O []E2, I ~[]E1, E1, E2 any](i I, f func(E1) E2) (o O) {
-	for _, e := range i {
-		o = append(o, f(e))
-	}
-	return
+func Transform[I ~[]E1, E1, E2 any](i I, f func(E1) E2) []E2 {
+	return slices.AppendSeq(make([]E2, 0, len(i)), seq.Transform(slices.Values(i), f))
 }
 
 // TransformErr uses the provided function to transform the elements of the provided slice into a new slice.
-// This function will return a nil slice and the first non-nil error returned by the transform function, without transforming the remaining elements.
-func TransformErr[O []E2, I ~[]E1, E1, E2 any](i I, f func(E1) (E2, error)) (o O, err error) {
-	for _, ei := range i {
-		eo, err := f(ei)
-		if err != nil {
-			return nil, err
-		}
-		o = append(o, eo)
-	}
-	return
+// When the first non-nil error is encountered this function will return a nil slice and the error without transforming the remaining elements.
+func TransformErr[I ~[]E1, E1, E2 any](i I, f func(E1) (E2, error)) (_ []E2, err error) {
+	return must.ZeroErr(slices.AppendSeq(make([]E2, 0, len(i)), seq.TransformErr(slices.Values(i), f, &err)), err)
 }
 
-// Zip combines the element at each index from each slice into a new slice of the input type.
+// Zip combines the slices into a slice of slices, where each inner slice contains the elements at the corresponding index of each input slice.
 // These slices are returned in order, from 0 to the length of the shortest input slice.
-func Zip[O []I, I ~[]E, E any](i ...I) O {
-	o := make(O, slices.Min(Transform(i, func(i I) int { return len(i) })))
-	for idx := 0; idx < len(o); idx++ {
+func Zip[I ~[]E, E any](i ...I) []I {
+	if len(i) == 0 {
+		return nil
+	}
+	l := len(i[0])
+	for _, is := range i[1:] {
+		if len(is) < l {
+			l = len(is)
+		}
+	}
+	o := make([]I, l)
+	for idx := range o {
 		o[idx] = make(I, len(i))
 		for ii, is := range i {
 			o[idx][ii] = is[idx]

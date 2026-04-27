@@ -1,6 +1,9 @@
 package channels
 
-import "context"
+import (
+	"context"
+	"slices"
+)
 
 // Await blocks until the provided channel returns a value or is closed.
 // The error will be nil unless the context is closed before the provided channel yields, in which case it will return immediately with the context's error.
@@ -13,15 +16,8 @@ func Await[I ~chan E, E any](ctx context.Context, i I) (t E, ok bool, err error)
 	return
 }
 
-// Collect collects values from the provided channel until it is closed, returning those values as a slice.
+// Collect collects values from the provided channel until it is closed, returning those values as a new slice.
 // The error will be nil unless the context is closed before the provided channel is closed, in which case it will return all of the results collected so far alongside the context's error.
-func Collect[O []E, I ~chan E, E any](ctx context.Context, i I) (O, error) {
-	var o O
-	for {
-		t, ok, err := Await(ctx, i)
-		if !ok {
-			return o, err
-		}
-		o = append(o, t)
-	}
+func Collect[O []E, I ~chan E, E any](ctx context.Context, i I) (_ O, err error) {
+	return slices.Collect(CollectSeq(ctx, i, &err)), err
 }

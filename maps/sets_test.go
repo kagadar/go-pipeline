@@ -80,7 +80,7 @@ func TestSubset(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := Subset(tt.a, tt.b); got != tt.want {
-				t.Errorf("Subset() got %t want %t", got, tt.want)
+				t.Errorf("Subset() got %t, want %t", got, tt.want)
 			}
 		})
 	}

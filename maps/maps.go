@@ -2,39 +2,44 @@ package maps
 
 import (
 	"cmp"
+	"maps"
 	"slices"
 
-	pslices "github.com/kagadar/go-pipeline/slices"
+	"github.com/kagadar/go-pipeline/must"
+	"github.com/kagadar/go-pipeline/predicates"
+	"github.com/kagadar/go-pipeline/seq"
 )
 
 // Keys returns the keys of the provided map as a slice in no particular order.
-func Keys[O []K, I ~map[K]V, K comparable, V any](i I) O {
-	return ToSlice(i, func(k K, _ V) K { return k })
+func Keys[I ~map[K]V, K comparable, V any](i I) []K {
+	return slices.AppendSeq(make([]K, 0, len(i)), maps.Keys(i))
 }
 
 // Values returns the values of the provided map as a slice in no particular order.
-func Values[O []V, I ~map[K]V, K comparable, V any](i I) O {
-	return ToSlice(i, func(_ K, v V) V { return v })
+func Values[I ~map[K]V, K comparable, V any](i I) []V {
+	return slices.AppendSeq(make([]V, 0, len(i)), maps.Values(i))
+}
+
+// All returns whether all key-value pairs of the provided map satisfy the provided function.
+func All[I ~map[K]V, K comparable, V any](i I, f func(K, V) bool) bool {
+	return seq.All2(maps.All(i), f)
+}
+
+// Any returns whether any key-value pair of the provided map satisfies the provided function.
+func Any[I ~map[K]V, K comparable, V any](i I, f func(K, V) bool) bool {
+	return seq.Any2(maps.All(i), f)
 }
 
 // Filter returns a new map containing all of the key-value pairs for which the provided function returned true.
+// The returned map will be preallocated to len(i). To avoid pre-allocation, use [seq.Filter2].
 func Filter[I ~map[K]V, K comparable, V any](i I, f func(K, V) bool) I {
-	o := I{}
-	for k, v := range i {
-		if f(k, v) {
-			o[k] = v
-		}
-	}
-	return o
+	return seq.InsertMap(make(I, len(i)), seq.Filter2(maps.All(i), f))
 }
 
-// ToSlice uses the provided function to transform the key-value pairs of the provided map into a slice.
-func ToSlice[O []E, I ~map[K]V, K comparable, V, E any](i I, f func(K, V) E) (o O) {
-	o = make(O, 0, len(i))
-	for k, v := range i {
-		o = append(o, f(k, v))
-	}
-	return
+// Invert returns a new map with all key-value pairs inverted.
+func Invert[I ~map[K]V, K, V comparable](i I) map[V]K {
+	return seq.InsertMap(make(map[V]K, len(i)), seq.Invert(maps.All(i)))
+
 }
 
 // MapMapInsert inserts the provided value into the inner map of the provided map of maps.
@@ -47,12 +52,16 @@ func MapMapInsert[I ~map[K]I2, I2 ~map[K2]V, K, K2 comparable, V any](i I, k K, 
 	}
 }
 
-// Transform uses the provided function to transform the key-value pairs of the provided map into a new map.
-func Transform[O map[K2]V2, I ~map[K1]V1, K1, K2 comparable, V1, V2 any](i I, f func(K1, V1) (K2, V2)) (o O) {
-	o = make(O, len(i))
+// Partition returns two new maps of the key-value pairs of the provided map, splitting them based on whether the provided func returned true.
+// The `pass` and `fail` maps will be pre-allocated to len(i)/2.
+func Partition[I ~map[K]V, K comparable, V any](i I, f func(K, V) bool) (pass, fail I) {
+	pass, fail = make(I, len(i)/2), make(I, len(i)/2)
 	for k, v := range i {
-		k, v := f(k, v)
-		o[k] = v
+		if f(k, v) {
+			pass[k] = v
+		} else {
+			fail[k] = v
+		}
 	}
 	return
 }
@@ -69,11 +78,8 @@ func Range[IM ~map[K]V, IK ~[]K, K comparable, V any](i IM, keys IK, f func(K, V
 }
 
 // Reduce runs the provided function once for each key-value pair, accumulating the result in `O`.
-func Reduce[O any, I ~map[K]V, K comparable, V any](i I, f func(O, K, V) O) (o O) {
-	for k, v := range i {
-		o = f(o, k, v)
-	}
-	return
+func Reduce[I ~map[K]V, K comparable, V, O any](i I, f func(O, K, V) O) O {
+	return seq.Reduce2(maps.All(i), f)
 }
 
 // SortedRange runs the provided function once for each key-value pair in the provided map, in ascending order of keys.
@@ -90,38 +96,32 @@ func SortedRangeFunc[I ~map[K]V, K comparable, V any](i I, sortF func(x, y K) in
 	return Range(i, s, rangeF)
 }
 
+// ToSlice uses the provided function to transform the key-value pairs of the provided map into a slice.
+func ToSlice[I ~map[K]V, K comparable, V, E any](i I, f func(K, V) E) []E {
+	return slices.AppendSeq(make([]E, 0, len(i)), seq.ToSeq(maps.All(i), f))
+}
+
+// Transform uses the provided function to transform the key-value pairs of the provided map into a new map.
+func Transform[I ~map[K1]V1, K1, K2 comparable, V1, V2 any](i I, f func(K1, V1) (K2, V2)) map[K2]V2 {
+	return seq.InsertMap(make(map[K2]V2, len(i)), seq.Transform2(maps.All(i), f))
+}
+
+// TransformErr uses the provided function to transform the key-value pairs of the provided map into a new map.
+// When the first non-nil error is encountered this function will return a nil map and the error without transforming the remaining elements.
+func TransformErr[I ~map[K1]V1, K1, K2 comparable, V1, V2 any](i I, f func(K1, V1) (K2, V2, error)) (o map[K2]V2, err error) {
+	return must.ZeroErr(seq.InsertMap(make(map[K2]V2, len(i)), seq.TransformErr2(maps.All(i), f, &err)), err)
+}
+
 // ValueSortedRange runs the provided range function once for each key-value pair in the provided map, in ascending order of values.
 func ValueSortedRange[I ~map[K]V, K comparable, V cmp.Ordered](i I, f func(K, V) error) error {
-	type pair struct {
-		k K
-		v V
-	}
-	pairs := ToSlice(i, func(k K, v V) pair {
-		return pair{k, v}
-	})
-	slices.SortFunc(pairs, func(x, y pair) int {
-		if x.v < y.v {
-			return -1
-		}
-		if x.v > y.v {
-			return 1
-		}
-		return 0
-	})
-	return Range(i, pslices.Transform(pairs, func(p pair) K { return p.k }), f)
+	keys := Keys(i)
+	slices.SortFunc(keys, predicates.ByMapValue(i))
+	return Range(i, keys, f)
 }
 
 // ValueSortedRange runs the provided range function once for each key-value pair in the provided map, in ascending order of values as determined by the provided sort function.
 func ValueSortedRangeFunc[I ~map[K]V, K comparable, V any](i I, sortF func(x, y V) int, rangeF func(K, V) error) error {
-	type pair struct {
-		k K
-		v V
-	}
-	pairs := ToSlice(i, func(k K, v V) pair {
-		return pair{k, v}
-	})
-	slices.SortFunc(pairs, func(x, y pair) int {
-		return sortF(x.v, y.v)
-	})
-	return Range(i, pslices.Transform(pairs, func(p pair) K { return p.k }), rangeF)
+	keys := Keys(i)
+	slices.SortFunc(keys, predicates.ByMapValueFunc(i, sortF))
+	return Range(i, keys, rangeF)
 }

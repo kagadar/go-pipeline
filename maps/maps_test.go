@@ -4,10 +4,12 @@ import (
 	"cmp"
 	"errors"
 	"strconv"
+	"strings"
 	"testing"
 
 	testcmp "github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/kagadar/go-pipeline/predicates"
 )
 
 func TestKeys(t *testing.T) {
@@ -30,20 +32,40 @@ func TestValues(t *testing.T) {
 	}
 }
 
+func TestAll(t *testing.T) {
+	if !All(map[int]struct{}{2: {}, 4: {}, 6: {}}, predicates.Keys[int, struct{}](predicates.IsEven)) {
+		t.Error("All({2,4,6}, IsEven) got false, want true")
+	}
+	if All(map[int]struct{}{1: {}, 2: {}, 6: {}}, predicates.Keys[int, struct{}](predicates.IsEven)) {
+		t.Error("All({1,2,6}, IsEven) got true, want false")
+	}
+}
+
+func TestAny(t *testing.T) {
+	if !Any(map[int]struct{}{1: {}, 2: {}, 3: {}}, predicates.Keys[int, struct{}](predicates.IsEven)) {
+		t.Error("Any({1,2,3}, IsEven) got false, want true")
+	}
+	if Any(map[int]struct{}{1: {}, 3: {}, 5: {}}, predicates.Keys[int, struct{}](predicates.IsEven)) {
+		t.Error("Any({1,3,5}, IsEven) got true, want false")
+	}
+}
+
 func TestFilter(t *testing.T) {
-	if diff := testcmp.Diff(Filter(map[int]int{1: 1, 2: 3, 4: 4}, func(k, v int) bool { return k == v }),
-		map[int]int{1: 1, 4: 4}); diff != "" {
+	if diff := testcmp.Diff(
+		Filter(map[int]int{1: 1, 2: 3, 4: 4}, func(k, v int) bool { return k == v }),
+		map[int]int{1: 1, 4: 4},
+	); diff != "" {
 		t.Errorf("Filter() unexpected diff (-got +want):\n%s", diff)
 	}
 }
 
-func TestToSlice(t *testing.T) {
+func TestInvert(t *testing.T) {
 	if diff := testcmp.Diff(
-		ToSlice(map[int]struct{}{1: {}, 2: {}, 3: {}}, func(k int, _ struct{}) int { return k }),
-		[]int{1, 2, 3},
-		cmpopts.SortSlices(cmp.Less[int]),
+		Invert(map[string]int{"1": 9, "2": 8}),
+		map[int]string{9: "1", 8: "2"},
 	); diff != "" {
-		t.Errorf("ToSlice() unexpected diff (-got +want):\n%s", diff)
+		t.Errorf(`Invert({"1": 9, "2": 8}) unexpected diff (-got +want):
+%s`, diff)
 	}
 }
 
@@ -59,15 +81,10 @@ func TestMapMapInsert(t *testing.T) {
 	}
 }
 
-func TestTransform(t *testing.T) {
-	if diff := testcmp.Diff(
-		Transform(
-			map[int]struct{}{1: {}, 2: {}, 3: {}},
-			func(k int, v struct{}) (string, struct{}) { return strconv.Itoa(k), v },
-		),
-		map[string]struct{}{"1": {}, "2": {}, "3": {}},
-	); diff != "" {
-		t.Errorf("Transform() unexpected diff (-got +want):\n%s", diff)
+func TestPartition(t *testing.T) {
+	evens, odds := Partition(map[int]struct{}{1: {}, 2: {}, 3: {}, 4: {}}, predicates.Keys[int, struct{}](predicates.IsEven))
+	if ediff, odiff := testcmp.Diff(evens, map[int]struct{}{2: {}, 4: {}}), testcmp.Diff(odds, map[int]struct{}{1: {}, 3: {}}); ediff != "" || odiff != "" {
+		t.Errorf("Partition({1,2,3,4}, IsEven) unexpected diff (-got +want):\n%s", strings.Join([]string{ediff, odiff}, "\n"))
 	}
 }
 
@@ -142,6 +159,57 @@ func TestSortedRangeFunc(t *testing.T) {
 	}
 	if diff := testcmp.Diff(got, []string{"a", "b", "c"}); diff != "" {
 		t.Errorf("SortedRangeFunc() unexpected diff (-got +want):\n%s", diff)
+	}
+}
+
+func TestToSlice(t *testing.T) {
+	if diff := testcmp.Diff(
+		ToSlice(map[int]struct{}{1: {}, 2: {}, 3: {}}, func(k int, _ struct{}) int { return k }),
+		[]int{1, 2, 3},
+		cmpopts.SortSlices(cmp.Less[int]),
+	); diff != "" {
+		t.Errorf("ToSlice() unexpected diff (-got +want):\n%s", diff)
+	}
+}
+
+func TestTransform(t *testing.T) {
+	if diff := testcmp.Diff(
+		Transform(
+			map[int]struct{}{1: {}, 2: {}, 3: {}},
+			func(k int, v struct{}) (string, struct{}) { return strconv.Itoa(k), v },
+		),
+		map[string]struct{}{"1": {}, "2": {}, "3": {}},
+	); diff != "" {
+		t.Errorf("Transform(Itoa) unexpected diff (-got +want):\n%s", diff)
+	}
+}
+
+func TestTransformErr(t *testing.T) {
+	got, err := TransformErr(
+		map[int]struct{}{1: {}, 2: {}, 3: {}},
+		func(k int, v struct{}) (string, struct{}, error) { return strconv.Itoa(k), v, nil },
+	)
+	if err != nil {
+		t.Fatalf("TransformErr(Itoa) unexpected error: %v", err)
+	}
+	if diff := testcmp.Diff(got, map[string]struct{}{"1": {}, "2": {}, "3": {}}); diff != "" {
+		t.Errorf("TransformErr(Itoa) unexpected diff (-got +want):\n%s", diff)
+	}
+}
+
+func TestTransformErr_Error(t *testing.T) {
+	want := errors.New("tef")
+	errors := []error{nil, want}
+	got, err := TransformErr(
+		map[int]struct{}{1: {}, 2: {}, 3: {}},
+		func(k int, v struct{}) (string, struct{}, error) {
+			err := errors[0]
+			errors = errors[1:]
+			return "", v, err
+		},
+	)
+	if got != nil || err != want {
+		t.Fatalf("TransformErr(fail) got %v %v, want map[] %v", got, err, want)
 	}
 }
 
