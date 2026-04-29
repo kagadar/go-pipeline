@@ -77,6 +77,18 @@ func TestFind2(t *testing.T) {
 	}
 }
 
+func TestInsertMap(t *testing.T) {
+	in := map[int]struct{}{1: {}, 2: {}, 3: {}}
+	got := InsertMap(in, maps.All(map[int]struct{}{3: {}, 4: {}, 5: {}}))
+	want := map[int]struct{}{1: {}, 2: {}, 3: {}, 4: {}, 5: {}}
+	if diff := testcmp.Diff(in, want); diff != "" {
+		t.Errorf("input map after InsertMap() unexpected diff (-got +want):\n%s", diff)
+	}
+	if diff := testcmp.Diff(got, want); diff != "" {
+		t.Errorf("InsertMap() unexpected diff (-got +want):\n%s", diff)
+	}
+}
+
 func TestYieldCoverage2(t *testing.T) {
 	v := slices.All([]int{2, 1, 6})
 	var err error

@@ -12,12 +12,18 @@ import (
 
 // Keys returns the keys of the provided map as a slice in no particular order.
 func Keys[I ~map[K]V, K comparable, V any](i I) []K {
-	return slices.AppendSeq(make([]K, 0, len(i)), maps.Keys(i))
+	if len(i) == 0 {
+		return nil
+	}
+	return seq.CollectSlice[[]K](len(i), maps.Keys(i))
 }
 
 // Values returns the values of the provided map as a slice in no particular order.
 func Values[I ~map[K]V, K comparable, V any](i I) []V {
-	return slices.AppendSeq(make([]V, 0, len(i)), maps.Values(i))
+	if len(i) == 0 {
+		return nil
+	}
+	return seq.CollectSlice[[]V](len(i), maps.Values(i))
 }
 
 // All returns whether all key-value pairs of the provided map satisfy the provided function.
@@ -33,12 +39,12 @@ func Any[I ~map[K]V, K comparable, V any](i I, f func(K, V) bool) bool {
 // Filter returns a new map containing all of the key-value pairs for which the provided function returned true.
 // The returned map will be preallocated to len(i). To avoid pre-allocation, use [seq.Filter2].
 func Filter[I ~map[K]V, K comparable, V any](i I, f func(K, V) bool) I {
-	return seq.InsertMap(make(I, len(i)), seq.Filter2(maps.All(i), f))
+	return seq.CollectMap[I](len(i), seq.Filter2(maps.All(i), f))
 }
 
 // Invert returns a new map with all key-value pairs inverted.
 func Invert[I ~map[K]V, K, V comparable](i I) map[V]K {
-	return seq.InsertMap(make(map[V]K, len(i)), seq.Invert(maps.All(i)))
+	return seq.CollectMap[map[V]K](len(i), seq.Invert(maps.All(i)))
 
 }
 
@@ -98,18 +104,21 @@ func SortedRangeFunc[I ~map[K]V, K comparable, V any](i I, sortF func(x, y K) in
 
 // ToSlice uses the provided function to transform the key-value pairs of the provided map into a slice.
 func ToSlice[I ~map[K]V, K comparable, V, E any](i I, f func(K, V) E) []E {
-	return slices.AppendSeq(make([]E, 0, len(i)), seq.ToSeq(maps.All(i), f))
+	if len(i) == 0 {
+		return nil
+	}
+	return seq.CollectSlice[[]E](len(i), seq.ToSeq(maps.All(i), f))
 }
 
 // Transform uses the provided function to transform the key-value pairs of the provided map into a new map.
 func Transform[I ~map[K1]V1, K1, K2 comparable, V1, V2 any](i I, f func(K1, V1) (K2, V2)) map[K2]V2 {
-	return seq.InsertMap(make(map[K2]V2, len(i)), seq.Transform2(maps.All(i), f))
+	return seq.CollectMap[map[K2]V2](len(i), seq.Transform2(maps.All(i), f))
 }
 
 // TransformErr uses the provided function to transform the key-value pairs of the provided map into a new map.
 // When the first non-nil error is encountered this function will return a nil map and the error without transforming the remaining elements.
 func TransformErr[I ~map[K1]V1, K1, K2 comparable, V1, V2 any](i I, f func(K1, V1) (K2, V2, error)) (o map[K2]V2, err error) {
-	return must.ZeroErr(seq.InsertMap(make(map[K2]V2, len(i)), seq.TransformErr2(maps.All(i), f, &err)), err)
+	return must.ZeroErr(seq.CollectMap[map[K2]V2](len(i), seq.TransformErr2(maps.All(i), f, &err)), err)
 }
 
 // ValueSortedRange runs the provided range function once for each key-value pair in the provided map, in ascending order of values.

@@ -52,6 +52,14 @@ func Chunk[I ~iterSeq[E], E any](i I, size int) iter.Seq[[]E] {
 	}
 }
 
+// CollectSlice collects the elements of the provided [iter.Seq] into a new slice preallocated to the provided length.
+func CollectSlice[O ~[]E, E any](length int, i iter.Seq[E]) O {
+	if length == 0 {
+		return nil
+	}
+	return slices.AppendSeq(make(O, 0, length), i)
+}
+
 // Concat returns a [iter.Seq] that yields all elements from the provided [iter.Seq]s in order.
 func Concat[I ~iterSeq[E], E any](i ...I) iter.Seq[E] {
 	return func(yield func(E) bool) {

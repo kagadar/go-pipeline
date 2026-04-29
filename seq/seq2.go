@@ -59,6 +59,11 @@ func CollectErr[I ~iterSeq2[E, error], E any](i I) (_ []E, err error) {
 	return must.ZeroErr(slices.Collect(CatchErr(i, &err)), err)
 }
 
+// CollectMap collects the elements of the provided [iter.Seq2] into a new map preallocated to the provided length.
+func CollectMap[O ~map[K]V, K comparable, V any](length int, i iter.Seq2[K, V]) O {
+	return InsertMap(make(O, length), i)
+}
+
 // Concat2 returns a [iter.Seq2] that yields all pairs from the provided [iter.Seq2]s in order.
 func Concat2[I ~iterSeq2[K, V], K, V any](i ...I) iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {

@@ -15,17 +15,26 @@ func All[I ~[]E, E any](i I, f func(E) bool) bool {
 // Dedupe returns a new slice containing the distinct elements of the provided slice, in order of first occurrence.
 // The returned slice will be preallocated to len(i). To avoid pre-allocation, use [seq.Dedupe].
 func Dedupe[I ~[]E, E comparable](i I) I {
-	return slices.AppendSeq(make(I, 0, len(i)), seq.Dedupe(slices.Values(i)))
+	if len(i) == 0 {
+		return nil
+	}
+	return seq.CollectSlice[I](len(i), seq.Dedupe(slices.Values(i)))
 }
 
 // Filter returns a new slice containing all of the elements for which the provided function returned true.
 // The returned slice will be preallocated to len(i). To avoid pre-allocation, use [seq.Filter].
 func Filter[I ~[]E, E any](i I, f func(E) bool) I {
-	return slices.AppendSeq(make(I, 0, len(i)), seq.Filter(slices.Values(i), f))
+	if len(i) == 0 {
+		return nil
+	}
+	return seq.CollectSlice[I](len(i), seq.Filter(slices.Values(i), f))
 }
 
 // Flatten returns a new slice containing all of the elements in order from the provided slice of slices.
 func Flatten[I ~[]S, S ~[]E, E any](i I) S {
+	if len(i) == 0 {
+		return nil
+	}
 	return slices.Concat(i...)
 }
 
@@ -50,6 +59,9 @@ func Last[I ~[]E, E any](i I) (e E) {
 // Partition returns two new slices of the elements of the provided slice, splitting them based on whether the provided func returned true.
 // To avoid reallocation, the `fail` slice will be in reverse order.
 func Partition[I ~[]E, E any](i I, f func(E) bool) (I, I) {
+	if len(i) == 0 {
+		return nil, nil
+	}
 	out := make(I, len(i))
 	front, back := 0, len(i)-1
 	for _, e := range i {
@@ -72,34 +84,42 @@ func Reduce[I ~[]E, E, O any](i I, f func(O, E) O) O {
 // SkipWhile returns a new slice containing the elements of the provided slice, skipping elements from the start until provided function returns true for the first time.
 // The returned slice will be preallocated to len(i). To avoid pre-allocation, use [seq.SkipWhile].
 func SkipWhile[I ~[]E, E any](i I, f func(E) bool) I {
-	return slices.AppendSeq(make(I, 0, len(i)), seq.SkipWhile(slices.Values(i), f))
+	if len(i) == 0 {
+		return nil
+	}
+	return seq.CollectSlice[I](len(i), seq.SkipWhile(slices.Values(i), f))
 }
 
 // TakeWhile returns a new slice containing the elements of the provided slice until the provided function returns false.
 // The returned slice will be preallocated to len(i). To avoid pre-allocation, use [seq.TakeWhile].
 func TakeWhile[I ~[]E, E any](i I, f func(E) bool) I {
-	return slices.AppendSeq(make(I, 0, len(i)), seq.TakeWhile(slices.Values(i), f))
+	if len(i) == 0 {
+		return nil
+	}
+	return seq.CollectSlice[I](len(i), seq.TakeWhile(slices.Values(i), f))
 }
 
 // ToMap uses the provided function to transform the elements of the provided slice into a map.
 // The returned map will be preallocated to len(i). To avoid pre-allocation, use [seq.ToSeq2].
 func ToMap[I ~[]E, K comparable, V, E any](i I, f func(E) (K, V)) map[K]V {
-	o := make(map[K]V, len(i))
-	for k, v := range seq.ToSeq2(slices.Values(i), f) {
-		o[k] = v
-	}
-	return o
+	return seq.CollectMap[map[K]V](len(i), seq.ToSeq2(slices.Values(i), f))
 }
 
 // Transform uses the provided function to transform the elements of the provided slice into a new slice.
 func Transform[I ~[]E1, E1, E2 any](i I, f func(E1) E2) []E2 {
-	return slices.AppendSeq(make([]E2, 0, len(i)), seq.Transform(slices.Values(i), f))
+	if len(i) == 0 {
+		return nil
+	}
+	return seq.CollectSlice[[]E2](len(i), seq.Transform(slices.Values(i), f))
 }
 
 // TransformErr uses the provided function to transform the elements of the provided slice into a new slice.
 // When the first non-nil error is encountered this function will return a nil slice and the error without transforming the remaining elements.
 func TransformErr[I ~[]E1, E1, E2 any](i I, f func(E1) (E2, error)) (_ []E2, err error) {
-	return must.ZeroErr(slices.AppendSeq(make([]E2, 0, len(i)), seq.TransformErr(slices.Values(i), f, &err)), err)
+	if len(i) == 0 {
+		return nil, nil
+	}
+	return must.ZeroErr(seq.CollectSlice[[]E2](len(i), seq.TransformErr(slices.Values(i), f, &err)), err)
 }
 
 // Zip combines the slices into a slice of slices, where each inner slice contains the elements at the corresponding index of each input slice.
