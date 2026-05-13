@@ -54,7 +54,7 @@ func CatchErr[I ~iterSeq2[E, error], E any](i I, errOut *error) iter.Seq[E] {
 }
 
 // CollateMap collates the elements of the provided [iter.Seq2] into a new map preallocated to the provided length.
-func CollateMap[O ~map[K][]V, I ~iterSeq2[K, V], K comparable, V any](length int, i I) O {
+func CollateMap[O ~map[K][]V, K comparable, V any](length int, i iter.Seq2[K, V]) O {
 	o := make(O, length)
 	for k, v := range i {
 		o[k] = append(o[k], v)
@@ -69,7 +69,7 @@ func CollectErr[I ~iterSeq2[E, error], E any](i I) (_ []E, err error) {
 }
 
 // CollectMap collects the elements of the provided [iter.Seq2] into a new map preallocated to the provided length.
-func CollectMap[O ~map[K]V, I ~iterSeq2[K, V], K comparable, V any](length int, i I) O {
+func CollectMap[O ~map[K]V, K comparable, V any](length int, i iter.Seq2[K, V]) O {
 	return InsertMap(make(O, length), i)
 }
 
@@ -117,7 +117,7 @@ func Find2[I ~iterSeq2[K, V], K, V any](i I, f func(K, V) bool) (k K, v V, ok bo
 }
 
 // InsertMap inserts the pairs of the provided [iter.Seq2] into the provided map and returns it.
-func InsertMap[O ~map[K]V, I ~iterSeq2[K, V], K comparable, V any](o O, i I) O {
+func InsertMap[O ~map[K]V, K comparable, V any](o O, i iter.Seq2[K, V]) O {
 	maps.Insert(o, i)
 	return o
 }
