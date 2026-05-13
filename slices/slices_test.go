@@ -19,6 +19,15 @@ func TestAll(t *testing.T) {
 	}
 }
 
+func TestCollateMap(t *testing.T) {
+	if diff := testcmp.Diff(
+		CollateMap([]int{1, 3, 2, 3}, func(e int) (k int, v struct{}) { return e, v }),
+		map[int][]struct{}{1: {{}}, 2: {{}}, 3: {{}, {}}},
+	); diff != "" {
+		t.Errorf("CollateMap() unexpected diff (-got +want):\n%s", diff)
+	}
+}
+
 func TestDedupe(t *testing.T) {
 	if diff := testcmp.Diff(Dedupe([]int{3, 2, 1, 1, 3}), []int{3, 2, 1}); diff != "" {
 		t.Errorf("Dedupe() unexpected diff (-got +want):\n%s", diff)
