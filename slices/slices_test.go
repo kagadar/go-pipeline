@@ -34,6 +34,31 @@ func TestFilter(t *testing.T) {
 	}
 }
 
+func TestFirst(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		in   []int
+		want int
+	}{
+		{
+			name: "populated",
+			in:   []int{1, 2, 3},
+			want: 1,
+		},
+		{
+			name: "empty",
+			in:   []int{},
+			want: 0,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := First(tt.in); got != tt.want {
+				t.Errorf("Last() got %d, want %d", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestFlatten(t *testing.T) {
 	if diff := testcmp.Diff(
 		Flatten([][]int{{1}, {1, 2}, {1, 2, 3}}),
