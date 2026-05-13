@@ -128,7 +128,7 @@ func ValueSortedRange[I ~map[K]V, K comparable, V cmp.Ordered](i I, f func(K, V)
 	return Range(i, keys, f)
 }
 
-// ValueSortedRange runs the provided range function once for each key-value pair in the provided map, in ascending order of values as determined by the provided sort function.
+// ValueSortedRangeFunc runs the provided range function once for each key-value pair in the provided map, in ascending order of values as determined by the provided sort function.
 func ValueSortedRangeFunc[I ~map[K]V, K comparable, V any](i I, sortF func(x, y V) int, rangeF func(K, V) error) error {
 	keys := Keys(i)
 	slices.SortFunc(keys, predicates.ByMapValueFunc(i, sortF))
