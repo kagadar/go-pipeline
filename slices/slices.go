@@ -30,6 +30,14 @@ func Filter[I ~[]E, E any](i I, f func(E) bool) I {
 	return seq.CollectSlice[I](len(i), seq.Filter(slices.Values(i), f))
 }
 
+// First returns the first element of the provided slice, or the zero value of that type if the slice is empty.
+func First[I ~[]E, E any](i I) (e E) {
+	if len(i) > 0 {
+		e = i[0]
+	}
+	return
+}
+
 // Flatten returns a new slice containing all of the elements in order from the provided slice of slices.
 func Flatten[I ~[]S, S ~[]E, E any](i I) S {
 	if len(i) == 0 {
