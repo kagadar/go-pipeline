@@ -12,6 +12,13 @@ func All[I ~[]E, E any](i I, f func(E) bool) bool {
 	return seq.All(slices.Values(i), f)
 }
 
+// CollateMap uses the provided function to transform and the elements of the provided slice into a map.
+// The values will be grouped by key.
+// The returned map will be preallocated to len(i)/2. To avoid pre-allocation, use [seq.CollateMap].
+func CollateMap[I ~[]E, K comparable, V, E any] (i I, f func(E) (K, V)) map[K][]V {
+	return seq.CollateMap[map[K][]V](len(i)/2, seq.ToSeq2(slices.Values(i), f))
+}
+
 // Dedupe returns a new slice containing the distinct elements of the provided slice, in order of first occurrence.
 // The returned slice will be preallocated to len(i). To avoid pre-allocation, use [seq.Dedupe].
 func Dedupe[I ~[]E, E comparable](i I) I {
