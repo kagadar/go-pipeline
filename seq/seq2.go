@@ -117,7 +117,7 @@ func Find2[I ~iterSeq2[K, V], K, V any](i I, f func(K, V) bool) (k K, v V, ok bo
 }
 
 // InsertMap inserts the pairs of the provided [iter.Seq2] into the provided map and returns it.
-func InsertMap[O ~map[K]V, K comparable, V any](o O, i iter.Seq2[K, V]) O {
+func InsertMap[O ~map[K]V, I ~iterSeq2[K, V], K comparable, V any](o O, i I) O {
 	maps.Insert(o, i)
 	return o
 }
