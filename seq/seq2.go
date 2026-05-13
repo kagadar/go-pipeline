@@ -53,6 +53,15 @@ func CatchErr[I ~iterSeq2[E, error], E any](i I, errOut *error) iter.Seq[E] {
 	}
 }
 
+// CollateMap collates the elements of the provided [iter.Seq2] into a new map preallocated to the provided length.
+func CollateMap[O ~map[K][]V, I ~iterSeq2[K, V], K comparable, V any](length int, i I) O {
+	o := make(O, length)
+	for k, v := range i {
+		o[k] = append(o[k], v)
+	}
+	return o
+}
+
 // CollectErr collects the elements of the provided [iter.Seq2] into a new slice and returns it.
 // When the first non-nil error is encountered a nil slice and the error will be returned.
 func CollectErr[I ~iterSeq2[E, error], E any](i I) (_ []E, err error) {
@@ -60,7 +69,7 @@ func CollectErr[I ~iterSeq2[E, error], E any](i I) (_ []E, err error) {
 }
 
 // CollectMap collects the elements of the provided [iter.Seq2] into a new map preallocated to the provided length.
-func CollectMap[O ~map[K]V, K comparable, V any](length int, i iter.Seq2[K, V]) O {
+func CollectMap[O ~map[K]V, I ~iterSeq2[K, V], K comparable, V any](length int, i I) O {
 	return InsertMap(make(O, length), i)
 }
 
